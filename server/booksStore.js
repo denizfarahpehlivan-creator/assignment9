@@ -1,4 +1,3 @@
-
 const seedBooks = [
   {
     id: 1,
@@ -7,7 +6,7 @@ const seedBooks = [
     year: 1949,
     genre: "fiction",
     read: true,
-    rating: 5
+    rating: 5,
   },
   {
     id: 2,
@@ -16,7 +15,7 @@ const seedBooks = [
     year: 1965,
     genre: "science",
     read: false,
-    rating: null
+    rating: null,
   },
   {
     id: 3,
@@ -25,7 +24,7 @@ const seedBooks = [
     year: 1937,
     genre: "fantasy",
     read: true,
-    rating: 4
+    rating: 4,
   },
   {
     id: 4,
@@ -34,7 +33,7 @@ const seedBooks = [
     year: 2011,
     genre: "history",
     read: false,
-    rating: null
+    rating: null,
   },
   {
     id: 5,
@@ -43,7 +42,7 @@ const seedBooks = [
     year: 1997,
     genre: "fantasy",
     read: true,
-    rating: 5
+    rating: 5,
   },
   {
     id: 6,
@@ -52,14 +51,13 @@ const seedBooks = [
     year: 1988,
     genre: "science",
     read: false,
-    rating: null
-  }
+    rating: null,
+  },
 ];
 
 let books = seedBooks;
 
-const delay = () =>
-  new Promise((resolve) => setTimeout(resolve, 100));
+const delay = () => new Promise((resolve) => setTimeout(resolve, 100));
 
 //create copy for every book than run a new set
 export async function getAllBooks() {
@@ -67,15 +65,13 @@ export async function getAllBooks() {
   return books.map((book) => ({ ...book }));
 }
 
-
 export async function getBookById(id) {
   await delay();
-  //with book.find we get the book by the id used  
+  //with book.find we get the book by the id used
   const book = books.find((book) => book.id === id);
 
   return book ? { ...book } : null;
 }
-
 
 export async function addBook(bookData) {
   await delay();
@@ -83,7 +79,7 @@ export async function addBook(bookData) {
   const duplicate = books.some(
     (book) =>
       book.title.toLowerCase() === bookData.title.toLowerCase() &&
-      book.author.toLowerCase() === bookData.author.toLowerCase()
+      book.author.toLowerCase() === bookData.author.toLowerCase(),
   );
 
   if (duplicate) {
@@ -94,7 +90,7 @@ export async function addBook(bookData) {
 
   const newBook = {
     id: newId,
-    ...bookData
+    ...bookData,
   };
 
   books = [...books, newBook];
@@ -102,4 +98,32 @@ export async function addBook(bookData) {
   return { ...newBook };
 }
 
+export async function updateBook(id, bookData) {
+  await delay();
 
+  const existingBook = books.find((book) => book.id === id);
+
+  if (!existingBook) {
+    return { error: "not_found" };
+  }
+
+  const duplicate = books.some(
+    (book) =>
+      book.id !== id &&
+      book.title.toLowerCase() === bookData.title.toLowerCase() &&
+      book.author.toLowerCase() === bookData.author.toLowerCase(),
+  );
+
+  if (duplicate) {
+    return { error: "duplicate" };
+  }
+  const updatedBook = {
+    id,
+    ...bookData,
+  };
+
+  //put the update book
+  books = books.map((book) => (book.id === id ? updatedBook : book));
+
+  return { value: { ...updatedBook } };
+}

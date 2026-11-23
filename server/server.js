@@ -1,6 +1,6 @@
 import { validateBook } from "./validate.js";
 import { addBook } from "./booksStore.js";
-import { getAllBooks, getBookById } from "./booksStore.js";
+import { getAllBooks, getBookById, updateBook } from "./booksStore.js";
 //famework that help with creating api and web server
 import express from "express";
 //provide communication between react and express api since they have diff ports
@@ -67,6 +67,41 @@ app.post("/api/books", async (req, res) => {
     .status(201)
     .location(`/api/books/${newBook.id}`)
     .json(newBook);
+});
+
+
+app.put("/api/books/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return res.status(400).json({
+      error: "Book ID must be a positive integer"
+    });
+  }
+
+  const result = validateBook(req.body);
+
+  if (result.error) {
+    return res.status(400).json({
+      error: result.error
+    });
+  }
+
+  const updated = await updateBook(id, result.value);
+
+  if (updated.error === "not_found") {
+    return res.status(404).json({
+      error: "Book not found"
+    });
+  }
+
+  if (updated.error === "duplicate") {
+    return res.status(409).json({
+      error: "A book with the same title and author already exists"
+    });
+  }
+
+  return res.status(200).json(updated.value);
 });
 
 
