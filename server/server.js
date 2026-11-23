@@ -5,7 +5,8 @@ import {
   getBookById,
   updateBook,
   patchBook,
-  deleteBook
+  deleteBook,
+  getStats
 } from "./booksStore.js";
 //famework that help with creating api and web server
 import express from "express";
@@ -186,6 +187,13 @@ app.delete("/api/books/:id", async (req, res) => {
   }
 
   return res.status(204).send();
+});
+
+
+app.get("/api/stats", async (req, res) => {
+  const stats = await getStats();
+
+  return res.status(200).json(stats);
 });
 
 

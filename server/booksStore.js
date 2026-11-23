@@ -174,3 +174,40 @@ export async function deleteBook(id) {
 
   return true;
 }
+
+
+export async function getStats() {
+  await delay();
+
+  const total = books.length;
+
+  const read = books.filter((book) => book.read).length;
+
+  const unread = total - read;
+
+  const ratedBooks = books.filter(
+    (book) => book.rating !== null
+  );
+
+  const averageRating =
+    ratedBooks.length === 0
+      ? null
+      : ratedBooks.reduce(
+          (sum, book) => sum + book.rating,
+          0
+        ) / ratedBooks.length;
+
+  const byGenre = {};
+
+  for (const book of books) {
+    byGenre[book.genre] = (byGenre[book.genre] || 0) + 1;
+  }
+
+  return {
+    total,
+    read,
+    unread,
+    averageRating,
+    byGenre
+  };
+}
