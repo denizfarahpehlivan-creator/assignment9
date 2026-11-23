@@ -127,3 +127,36 @@ export async function updateBook(id, bookData) {
 
   return { value: { ...updatedBook } };
 }
+
+export async function patchBook(id, changes) {
+  await delay();
+
+  const existingBook = books.find((book) => book.id === id);
+
+  if (!existingBook) {
+    return { error: "not_found" };
+  }
+
+  const updatedBook = {
+    ...existingBook,
+    ...changes,
+    id
+  };
+
+  const duplicate = books.some(
+    (book) =>
+      book.id !== id &&
+      book.title.toLowerCase() === updatedBook.title.toLowerCase() &&
+      book.author.toLowerCase() === updatedBook.author.toLowerCase()
+  );
+
+  if (duplicate) {
+    return { error: "duplicate" };
+  }
+
+  books = books.map((book) =>
+    book.id === id ? updatedBook : book
+  );
+
+  return { value: { ...updatedBook } };
+}

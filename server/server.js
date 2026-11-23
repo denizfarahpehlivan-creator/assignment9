@@ -1,6 +1,11 @@
 import { validateBook } from "./validate.js";
 import { addBook } from "./booksStore.js";
-import { getAllBooks, getBookById, updateBook } from "./booksStore.js";
+import {
+  getAllBooks,
+  getBookById,
+  updateBook,
+  patchBook,
+} from "./booksStore.js";
 //famework that help with creating api and web server
 import express from "express";
 //provide communication between react and express api since they have diff ports
@@ -45,13 +50,12 @@ app.get("/api/books/:id", async (req, res) => {
   return res.status(200).json(book);
 });
 
-
 app.post("/api/books", async (req, res) => {
   const result = validateBook(req.body);
 
   if (result.error) {
     return res.status(400).json({
-      error: result.error
+      error: result.error,
     });
   }
 
@@ -59,23 +63,19 @@ app.post("/api/books", async (req, res) => {
 
   if (!newBook) {
     return res.status(409).json({
-      error: "A book with the same title and author already exists"
+      error: "A book with the same title and author already exists",
     });
   }
 
-  return res
-    .status(201)
-    .location(`/api/books/${newBook.id}`)
-    .json(newBook);
+  return res.status(201).location(`/api/books/${newBook.id}`).json(newBook);
 });
-
 
 app.put("/api/books/:id", async (req, res) => {
   const id = Number(req.params.id);
 
   if (!Number.isSafeInteger(id) || id <= 0) {
     return res.status(400).json({
-      error: "Book ID must be a positive integer"
+      error: "Book ID must be a positive integer",
     });
   }
 
@@ -83,7 +83,7 @@ app.put("/api/books/:id", async (req, res) => {
 
   if (result.error) {
     return res.status(400).json({
-      error: result.error
+      error: result.error,
     });
   }
 
@@ -91,19 +91,81 @@ app.put("/api/books/:id", async (req, res) => {
 
   if (updated.error === "not_found") {
     return res.status(404).json({
-      error: "Book not found"
+      error: "Book not found",
     });
   }
 
   if (updated.error === "duplicate") {
     return res.status(409).json({
-      error: "A book with the same title and author already exists"
+      error: "A book with the same title and author already exists",
     });
   }
 
   return res.status(200).json(updated.value);
 });
 
+app.patch("/api/books/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return res.status(400).json({
+      error: "Book ID must be a positive integer",
+    });
+  }
+
+  if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+    return res.status(400).json({
+      error: "Book data must be an object",
+    });
+  }
+
+  const existingBook = await getBookById(id);
+
+  if (!existingBook) {
+    return res.status(404).json({
+      error: "Book not found",
+    });
+  }
+
+  const allowedFields = ["title", "author", "year", "genre", "read", "rating"];
+
+  const changes = {};
+
+  for (const field of allowedFields) {
+    if (Object.hasOwn(req.body, field)) {
+      changes[field] = req.body[field];
+    }
+  }
+
+  const mergedBook = {
+    ...existingBook,
+    ...changes,
+  };
+
+  const result = validateBook(mergedBook);
+
+  if (result.error) {
+    return res.status(400).json({
+      error: result.error,
+    });
+  }
+
+  const updated = await patchBook(id, result.value);
+
+  if (updated.error === "duplicate") {
+    return res.status(409).json({
+      error: "A book with the same title and author already exists",
+    });
+  }
+
+  if (updated.error === "not_found") {
+    return res.status(404).json({
+      error: "Book not found",
+    });
+  }
+
+  return res.status(200).json(updated.value);
+});
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
