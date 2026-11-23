@@ -1,3 +1,5 @@
+import { validateBook } from "./validate.js";
+import { addBook } from "./booksStore.js";
 import { getAllBooks, getBookById } from "./booksStore.js";
 //famework that help with creating api and web server
 import express from "express";
@@ -9,9 +11,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
+//middleware
 app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json());
 
+//endpoint
 app.get("/api/hello", async (req, res) => {
   res.json({ message: "Reading List API is working!" });
 });
@@ -40,6 +44,31 @@ app.get("/api/books/:id", async (req, res) => {
 
   return res.status(200).json(book);
 });
+
+
+app.post("/api/books", async (req, res) => {
+  const result = validateBook(req.body);
+
+  if (result.error) {
+    return res.status(400).json({
+      error: result.error
+    });
+  }
+
+  const newBook = await addBook(result.value);
+
+  if (!newBook) {
+    return res.status(409).json({
+      error: "A book with the same title and author already exists"
+    });
+  }
+
+  return res
+    .status(201)
+    .location(`/api/books/${newBook.id}`)
+    .json(newBook);
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

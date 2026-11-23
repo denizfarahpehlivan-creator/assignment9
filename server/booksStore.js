@@ -76,3 +76,30 @@ export async function getBookById(id) {
   return book ? { ...book } : null;
 }
 
+
+export async function addBook(bookData) {
+  await delay();
+
+  const duplicate = books.some(
+    (book) =>
+      book.title.toLowerCase() === bookData.title.toLowerCase() &&
+      book.author.toLowerCase() === bookData.author.toLowerCase()
+  );
+
+  if (duplicate) {
+    return null;
+  }
+
+  const newId = Math.max(0, ...books.map((book) => book.id)) + 1;
+
+  const newBook = {
+    id: newId,
+    ...bookData
+  };
+
+  books = [...books, newBook];
+
+  return { ...newBook };
+}
+
+
