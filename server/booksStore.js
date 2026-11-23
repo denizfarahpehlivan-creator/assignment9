@@ -66,3 +66,13 @@ export async function getAllBooks() {
   await delay();
   return books.map((book) => ({ ...book }));
 }
+
+
+export async function getBookById(id) {
+  await delay();
+  //with book.find we get the book by the id used  
+  const book = books.find((book) => book.id === id);
+
+  return book ? { ...book } : null;
+}
+
