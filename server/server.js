@@ -5,6 +5,7 @@ import {
   getBookById,
   updateBook,
   patchBook,
+  deleteBook
 } from "./booksStore.js";
 //famework that help with creating api and web server
 import express from "express";
@@ -166,6 +167,27 @@ app.patch("/api/books/:id", async (req, res) => {
 
   return res.status(200).json(updated.value);
 });
+
+app.delete("/api/books/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return res.status(400).json({
+      error: "Book ID must be a positive integer"
+    });
+  }
+
+  const deleted = await deleteBook(id);
+
+  if (!deleted) {
+    return res.status(404).json({
+      error: "Book not found"
+    });
+  }
+
+  return res.status(204).send();
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

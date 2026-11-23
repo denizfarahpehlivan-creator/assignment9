@@ -160,3 +160,17 @@ export async function patchBook(id, changes) {
 
   return { value: { ...updatedBook } };
 }
+
+export async function deleteBook(id) {
+  await delay();
+
+  const existingBook = books.find((book) => book.id === id);
+
+  if (!existingBook) {
+    return false;
+  }
+
+  books = books.filter((book) => book.id !== id);
+
+  return true;
+}
