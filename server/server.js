@@ -33,10 +33,11 @@ app.get("/api/hello", (req, res) => {
 });
 
 // GET /api/books
-// Supports genre and read filtering
+// Supports genre, read status and search filtering
 app.get("/api/books", async (req, res) => {
   const genre = req.query.genre;
   const read = req.query.read;
+  const q = req.query.q;
 
   const validGenres = [
     "fiction",
@@ -68,6 +69,13 @@ app.get("/api/books", async (req, res) => {
     });
   }
 
+  // Validate search query
+  if (q !== undefined && typeof q !== "string") {
+    return res.status(400).json({
+      error: "Invalid search query"
+    });
+  }
+
   let books = await getAllBooks();
 
   // Filter by genre
@@ -80,6 +88,18 @@ app.get("/api/books", async (req, res) => {
     const isRead = read === "true";
 
     books = books.filter((book) => book.read === isRead);
+  }
+
+  // Search by title or author
+  if (q !== undefined && q.trim() !== "") {
+    const searchTerm = q.trim().toLowerCase();
+
+    books = books.filter((book) => {
+      return (
+        book.title.toLowerCase().includes(searchTerm) ||
+        book.author.toLowerCase().includes(searchTerm)
+      );
+    });
   }
 
   return res.status(200).json(books);
