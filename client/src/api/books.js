@@ -1,8 +1,16 @@
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+﻿const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_URL}${path}`, options);
+  const headers = { ...options.headers };
+
+  if (options.body !== undefined && options.body !== null) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
 
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
@@ -25,7 +33,6 @@ export function getStats() {
 export function createBook(book) {
   return request("/books", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(book),
   });
 }
@@ -33,7 +40,6 @@ export function createBook(book) {
 export function updateBook(id, book) {
   return request(`/books/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(book),
   });
 }
@@ -41,7 +47,6 @@ export function updateBook(id, book) {
 export function patchBook(id, changes) {
   return request(`/books/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changes),
   });
 }

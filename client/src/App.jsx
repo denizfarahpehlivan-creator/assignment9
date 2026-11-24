@@ -1,4 +1,4 @@
-﻿
+
 import { useEffect, useState } from "react";
 import {
   getBooks,
@@ -32,6 +32,7 @@ function App() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   async function loadStats() {
     try {
@@ -50,7 +51,7 @@ function App() {
       setError("");
 
       try {
-        const params = new URLSearchParams({ limit: "100" });
+        const params = new URLSearchParams({ limit: "50" });
 
         if (search.trim()) params.set("q", search.trim());
         if (filterGenre) params.set("genre", filterGenre);
@@ -100,6 +101,8 @@ function App() {
       genre: form.genre,
     };
 
+    setSubmitting(true);
+
     try {
       if (editingId !== null) {
         const currentBook = books.find((book) => book.id === editingId);
@@ -123,6 +126,8 @@ function App() {
       await refreshData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -144,7 +149,7 @@ function App() {
   }
 
   async function refreshData() {
-    const params = new URLSearchParams({ limit: "100" });
+    const params = new URLSearchParams({ limit: "50" });
 
     if (search.trim()) params.set("q", search.trim());
     if (filterGenre) params.set("genre", filterGenre);
@@ -165,7 +170,9 @@ function App() {
     setError("");
 
     try {
-      await patchBook(book.id, { read: !book.read });
+      await patchBook(book.id, book.read
+        ? { read: false, rating: null }
+        : { read: true });
       await refreshData();
     } catch (err) {
       setError(err.message);
@@ -217,74 +224,33 @@ function App() {
       </header>
 
       {stats && (
-        <section className="panel">
-          <h2>Reading Statistics</h2>
-
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Total Books</h3>
-              <p>{stats.total ?? 0}</p>
-            </div>
-
-            <div className="stat-card">
-              <h3>Read</h3>
-              <p>{stats.read ?? 0}</p>
-            </div>
-
-            <div className="stat-card">
-              <h3>Unread</h3>
-              <p>{stats.unread ?? 0}</p>
-            </div>
-
-            <div className="stat-card">
-              <h3>Average Rating</h3>
-              <p>
-                {stats.averageRating == null
-                  ? "N/A"
-                  : Number(stats.averageRating).toFixed(1)}
-              </p>
-            </div>
-            <div className="stats-grid">
-                <div className="stat-card">
-                  <h3>Total Books</h3>
-                  <p>{stats.total ?? 0}</p>
-                </div>
-
-                <div className="stat-card">
-                  <h3>Read</h3>
-                  <p>{stats.read ?? 0}</p>
-                </div>
-
-                <div className="stat-card">
-                  <h3>Unread</h3>
-                  <p>{stats.unread ?? 0}</p>
-                </div>
-
-                <div className="stat-card">
-                  <h3>Average Rating</h3>
-                  <p>
-                    {stats.averageRating == null
-                      ? "N/A"
-                      : Number(stats.averageRating).toFixed(1)}
-                  </p>
-                </div>
-
-                {/* BURAYA EKLÄ°YORUZ */}
-                <div className="stat-card">
-                  <h3>Books by Genre</h3>
-                  {Object.entries(stats.byGenre || {}).map(([genre, count]) => (
-                    <p key={genre}>
-                      {genre}: {count}
-                    </p>
-                  ))}
-                </div>
-
-              </div>
+        <section className="stats-grid">
+          <div className="stat-card">
+            <h3>Total Books</h3>
+            <p>{stats.total}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Read</h3>
+            <p>{stats.read}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Unread</h3>
+            <p>{stats.unread}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Average Rating</h3>
+            <p>{stats.averageRating ?? "N/A"}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Books by Genre</h3>
+            {Object.entries(stats.byGenre || {}).map(([genre, count]) => (
+              <p key={genre}>{genre}: {count}</p>
+            ))}
           </div>
         </section>
       )}
 
-      <section className="panel">
+        <section className="panel">
         <h2>{editingId !== null ? "Edit Book" : "Add a New Book"}</h2>
 
         <form className="book-form" onSubmit={handleSubmit}>
@@ -328,8 +294,8 @@ function App() {
             <option value="other">Other</option>
           </select>
 
-          <button type="submit">
-            {editingId !== null ? "Save Changes" : "Add Book"}
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Saving..." : editingId !== null ? "Save Changes" : "Add Book"}
           </button>
 
           {editingId !== null && (
@@ -403,7 +369,7 @@ function App() {
         {error && <p className="error">{error}</p>}
         {loading && <p>Loading books...</p>}
 
-        {!loading && displayedBooks.length === 0 && (
+        {!loading && !error && displayedBooks.length === 0 && (
           <p className="empty">No books found. Add your first book!</p>
         )}
 
@@ -427,11 +393,12 @@ function App() {
 
               <select
                 aria-label={`Rate ${book.title}`}
+                disabled={!book.read}
                 value={book.rating ?? ""}
                 onChange={(e) => rateBook(book, e.target.value)}
               >
                 <option value="" disabled>
-                  Give a rating
+                  {book.read ? "Give a rating" : "Mark as read to rate"}
                 </option>
                 <option value="1">1 Star</option>
                 <option value="2">2 Stars</option>
@@ -471,4 +438,3 @@ function App() {
 }
 
 export default App;
-

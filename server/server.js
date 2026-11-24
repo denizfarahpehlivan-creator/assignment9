@@ -1,4 +1,4 @@
-﻿import { validateBook } from "./validate.js";
+import { validateBook } from "./validate.js";
 
 import {
   addBook,
@@ -122,7 +122,7 @@ app.get("/api/books", asyncHandler(async (req, res) => {
     });
   }
 
-  if (!Number.isInteger(limit) || limit < 1) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
     return res.status(400).json({
       error: "Limit must be a positive integer"
     });
@@ -135,7 +135,7 @@ app.get("/api/books", asyncHandler(async (req, res) => {
     (typeof sort !== "string" || !validSortFields.includes(sort))
   ) {
     return res.status(400).json({
-      error: "Invalid sort field. Use title, year or rating."
+      error: "Invalid sort field. Use title, author, year or rating."
     });
   }
 
@@ -307,11 +307,14 @@ app.patch("/api/books/:id", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Request body must be an object" });
   }
 
-  const keys = Object.keys(req.body);
+  // Ignore unknown fields
+  const changes = Object.fromEntries(
+    Object.entries(req.body).filter(([key]) => allowedFields.includes(key))
+  );
 
-  if (keys.length === 0 || keys.some((key) => !allowedFields.includes(key))) {
+  if (Object.keys(changes).length === 0) {
     return res.status(400).json({
-      error: "Provide valid book fields to update."
+      error: "Provide at least one valid book field to update."
     });
   }
 
@@ -323,7 +326,7 @@ app.patch("/api/books/:id", asyncHandler(async (req, res) => {
 
   const mergedBook = {
     ...existingBook,
-    ...req.body
+    ...changes
   };
 
   const validation = validateBook(mergedBook);
@@ -332,15 +335,17 @@ app.patch("/api/books/:id", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: validation.error });
   }
 
-  const result = await patchBook(id, {
-    ...req.body,
-    ...(req.body.title !== undefined
+  const normalizedChanges = {
+    ...changes,
+    ...(changes.title !== undefined
       ? { title: validation.value.title }
       : {}),
-    ...(req.body.author !== undefined
+    ...(changes.author !== undefined
       ? { author: validation.value.author }
       : {})
-  });
+  };
+
+  const result = await patchBook(id, normalizedChanges);
 
   if (result?.error === "not_found") {
     return res.status(404).json({ error: "Book not found" });
@@ -354,7 +359,6 @@ app.patch("/api/books/:id", asyncHandler(async (req, res) => {
 
   return res.status(200).json(result.value);
 }));
-
 // DELETE /api/books/:id
 app.delete("/api/books/:id", asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
@@ -378,10 +382,15 @@ app.get("/api/stats", asyncHandler(async (req, res) => {
   return res.status(200).json(stats);
 }));
 
-// Unknown routes
-app.use((req, res) => {
+// Deliberate async error test
+app.get("/api/crash", asyncHandler(async (req, res) => {
+  throw new Error("Deliberate async error test");
+}));
+
+// Unknown API routes
+app.use("/api", (req, res) => {
   return res.status(404).json({
-    error: "Route not found"
+    error: "Not found"
   });
 });
 
@@ -400,7 +409,7 @@ app.use((err, req, res, next) => {
   console.error(err);
 
   return res.status(500).json({
-    error: "Internal server error"
+    error: "Something went wrong"
   });
 });
 
@@ -408,4 +417,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
