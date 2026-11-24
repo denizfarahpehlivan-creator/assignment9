@@ -1,5 +1,6 @@
 
 import { validateBook } from "./validate.js";
+
 import {
   addBook,
   getAllBooks,
@@ -10,28 +11,32 @@ import {
   getStats
 } from "./booksStore.js";
 
+// Framework for creating API and web server
 import express from "express";
+
+// Allows communication between React and Express
 import cors from "cors";
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
 // Middleware
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors());
 app.use(express.json());
 
-// Hello endpoint
-app.get("/api/hello", async (req, res) => {
-  res.json({ message: "Reading List API is working!" });
+// GET /api/hello
+app.get("/api/hello", (req, res) => {
+  res.status(200).json({
+    message: "Hello from Express API!"
+  });
 });
 
-// Get all books with optional genre filter
+// GET /api/books
+// Supports genre and read filtering
 app.get("/api/books", async (req, res) => {
   const genre = req.query.genre;
-
-
+  const read = req.query.read;
 
   const validGenres = [
     "fiction",
@@ -42,6 +47,7 @@ app.get("/api/books", async (req, res) => {
     "other"
   ];
 
+  // Validate genre
   if (
     genre !== undefined &&
     (typeof genre !== "string" || !validGenres.includes(genre))
@@ -51,22 +57,41 @@ app.get("/api/books", async (req, res) => {
     });
   }
 
+  // Validate read parameter
+  if (
+    read !== undefined &&
+    read !== "true" &&
+    read !== "false"
+  ) {
+    return res.status(400).json({
+      error: "Invalid read value. Use true or false."
+    });
+  }
+
   let books = await getAllBooks();
 
+  // Filter by genre
   if (genre !== undefined) {
     books = books.filter((book) => book.genre === genre);
+  }
+
+  // Filter by read status
+  if (read !== undefined) {
+    const isRead = read === "true";
+
+    books = books.filter((book) => book.read === isRead);
   }
 
   return res.status(200).json(books);
 });
 
-// Get book by ID
+// GET /api/books/:id
 app.get("/api/books/:id", async (req, res) => {
   const id = Number(req.params.id);
 
-  if (!Number.isSafeInteger(id) || id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({
-      error: "Book ID must be a positive integer"
+      error: "Invalid book ID"
     });
   }
 
@@ -81,11 +106,11 @@ app.get("/api/books/:id", async (req, res) => {
   return res.status(200).json(book);
 });
 
-// Add a new book
+// POST /api/books
 app.post("/api/books", async (req, res) => {
   const result = validateBook(req.body);
 
-  if (result.error) {
+  if (!result.valid) {
     return res.status(400).json({
       error: result.error
     });
@@ -93,99 +118,55 @@ app.post("/api/books", async (req, res) => {
 
   const newBook = await addBook(result.value);
 
-  if (!newBook) {
-    return res.status(409).json({
-      error: "A book with the same title and author already exists"
-    });
-  }
-
-  return res.status(201)
-    .location(`/api/books/${newBook.id}`)
-    .json(newBook);
+  return res.status(201).json(newBook);
 });
 
-// Replace a book
+// PUT /api/books/:id
 app.put("/api/books/:id", async (req, res) => {
   const id = Number(req.params.id);
 
-  if (!Number.isSafeInteger(id) || id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({
-      error: "Book ID must be a positive integer"
+      error: "Invalid book ID"
     });
   }
 
   const result = validateBook(req.body);
 
-  if (result.error) {
+  if (!result.valid) {
     return res.status(400).json({
       error: result.error
     });
   }
 
-  const updated = await updateBook(id, result.value);
+  const updatedBook = await updateBook(id, result.value);
 
-  if (updated.error === "not_found") {
+  if (!updatedBook) {
     return res.status(404).json({
       error: "Book not found"
     });
   }
 
-  if (updated.error === "duplicate") {
-    return res.status(409).json({
-      error: "A book with the same title and author already exists"
-    });
-  }
-
-  return res.status(200).json(updated.value);
+  return res.status(200).json(updatedBook);
 });
 
-// Partially update a book
+// PATCH /api/books/:id
 app.patch("/api/books/:id", async (req, res) => {
   const id = Number(req.params.id);
 
-  if (!Number.isSafeInteger(id) || id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({
-      error: "Book ID must be a positive integer"
+      error: "Invalid book ID"
     });
   }
 
-  if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-    return res.status(400).json({
-      error: "Book data must be an object"
-    });
-  }
+  const result = await patchBook(id, req.body);
 
-  const existingBook = await getBookById(id);
-
-  if (!existingBook) {
+  if (!result) {
     return res.status(404).json({
       error: "Book not found"
     });
   }
-
-  const allowedFields = [
-    "title",
-    "author",
-    "year",
-    "genre",
-    "read",
-    "rating"
-  ];
-
-  const changes = {};
-
-  for (const field of allowedFields) {
-    if (Object.hasOwn(req.body, field)) {
-      changes[field] = req.body[field];
-    }
-  }
-
-  const mergedBook = {
-    ...existingBook,
-    ...changes
-  };
-
-  const result = validateBook(mergedBook);
 
   if (result.error) {
     return res.status(400).json({
@@ -193,36 +174,22 @@ app.patch("/api/books/:id", async (req, res) => {
     });
   }
 
-  const updated = await patchBook(id, result.value);
-
-  if (updated.error === "duplicate") {
-    return res.status(409).json({
-      error: "A book with the same title and author already exists"
-    });
-  }
-
-  if (updated.error === "not_found") {
-    return res.status(404).json({
-      error: "Book not found"
-    });
-  }
-
-  return res.status(200).json(updated.value);
+  return res.status(200).json(result);
 });
 
-// Delete a book
+// DELETE /api/books/:id
 app.delete("/api/books/:id", async (req, res) => {
   const id = Number(req.params.id);
 
-  if (!Number.isSafeInteger(id) || id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({
-      error: "Book ID must be a positive integer"
+      error: "Invalid book ID"
     });
   }
 
-  const deleted = await deleteBook(id);
+  const deletedBook = await deleteBook(id);
 
-  if (!deleted) {
+  if (!deletedBook) {
     return res.status(404).json({
       error: "Book not found"
     });
@@ -231,7 +198,7 @@ app.delete("/api/books/:id", async (req, res) => {
   return res.status(204).send();
 });
 
-// Get book statistics
+// GET /api/stats
 app.get("/api/stats", async (req, res) => {
   const stats = await getStats();
 
