@@ -1,4 +1,4 @@
-# Assignment 9 – Book Management API
+﻿# Assignment 9 â€“ Book Management API
 
 ## Project Overview
 
@@ -22,24 +22,24 @@ The application also provides statistics about the book collection.
 
 ```text
 assignment9/
-│
-├── server/
-│   ├── server.js
-│   ├── booksStore.js
-│   ├── validate.js
-│   └── .env.example
-│
-├── client/
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── books.js
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   └── main.jsx
-│   ├── .env.example
-│   └── package.json
-│
-└── README.md
+â”‚
+â”œâ”€â”€ server/
+â”‚   â”œâ”€â”€ server.js
+â”‚   â”œâ”€â”€ booksStore.js
+â”‚   â”œâ”€â”€ validate.js
+â”‚   â””â”€â”€ .env.example
+â”‚
+â”œâ”€â”€ client/
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ api/
+â”‚   â”‚   â”‚   â””â”€â”€ books.js
+â”‚   â”‚   â”œâ”€â”€ App.jsx
+â”‚   â”‚   â”œâ”€â”€ App.css
+â”‚   â”‚   â””â”€â”€ main.jsx
+â”‚   â”œâ”€â”€ .env.example
+â”‚   â””â”€â”€ package.json
+â”‚
+â””â”€â”€ README.md
 ```
 
 ## Installation and Running
@@ -156,7 +156,7 @@ curl.exe -i http://localhost:3000/api/books/1
 
 Expected status: `200 OK`
 
-### 3. POST – Create a book
+### 3. POST â€“ Create a book
 
 ```powershell
 $body = @{
@@ -175,7 +175,7 @@ curl.exe -i -X POST http://localhost:3000/api/books `
 
 Expected status: `201 Created`
 
-### 4. POST – Invalid body
+### 4. POST â€“ Invalid body
 
 ```powershell
 curl.exe -i -X POST http://localhost:3000/api/books `
@@ -185,7 +185,7 @@ curl.exe -i -X POST http://localhost:3000/api/books `
 
 Expected status: `400 Bad Request`
 
-### 5. GET – Repeated query parameter
+### 5. GET â€“ Repeated query parameter
 
 ```powershell
 curl.exe -i "http://localhost:3000/api/books?genre=fantasy&genre=science"
@@ -193,7 +193,7 @@ curl.exe -i "http://localhost:3000/api/books?genre=fantasy&genre=science"
 
 Expected status: `400 Bad Request`
 
-### 6. GET – Missing book
+### 6. GET â€“ Missing book
 
 ```powershell
 curl.exe -i http://localhost:3000/api/books/9999
@@ -201,7 +201,7 @@ curl.exe -i http://localhost:3000/api/books/9999
 
 Expected status: `404 Not Found`
 
-### 7. POST – Duplicate book
+### 7. POST â€“ Duplicate book
 
 Send the same POST request twice using the same title and author.
 
@@ -405,3 +405,209 @@ Location: /api/books/8
 
 {"total":8,"read":5,"unread":3,"averageRating":4.6}
 
+## Actual curl --include Test Outputs
+
+### 1. Statistics before changes
+```text
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 111
+ETag: W/"6f-dX87XUq7Hc1nXP7Rw8cjdc4006c"
+Date: Tue, 24 Nov 2026 22:06:52 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"total":7,"read":4,"unread":3,"averageRating":4.5,"byGenre":{"fiction":1,"science":3,"fantasy":2,"history":1}}
+```
+
+### 2. List with two query parameters
+```text
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 307
+ETag: W/"133-TnitpctaqNKbyVMfv4SiC0tiQf4"
+Date: Tue, 24 Nov 2026 22:06:52 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"page":1,"limit":50,"totalBooks":2,"totalPages":1,"books":[{"id":3,"title":"The Hobbit","author":"J.R.R. Tolkien","year":1937,"genre":"fantasy","read":true,"rating":4},{"id":5,"title":"Harry Potter and the Philosopher's Stone","author":"J.K. Rowling","year":1997,"genre":"fantasy","read":true,"rating":5}]}
+```
+
+### 3. Get one book
+```text
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 101
+ETag: W/"65-QU13BNyl+mmsd8jg7Z1/OfVNr5o"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"id":1,"title":"1984","author":"George Orwell","year":1949,"genre":"fiction","read":true,"rating":5}
+```
+
+### 4. Create book (201 and Location)
+```text
+HTTP/1.1 201 Created
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Location: /api/books/8
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+ETag: W/"81-zvMzy63i2mRjzjS074ZmjliFh9E"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"id":8,"title":"README Evidence 20261125010653","author":"Evidence Author","year":2022,"genre":"science","read":true,"rating":4}
+```
+
+### 5. Invalid body (400)
+```text
+HTTP/1.1 400 Bad Request
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 54
+ETag: W/"36-2Rygc0uaNi6iZpfSVzMK4FGxgrE"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"error":"Title must be between 1 and 100 characters"}
+```
+
+### 6. Repeated query parameter (400)
+```text
+HTTP/1.1 400 Bad Request
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 25
+ETag: W/"19-mQYhBchq2WNfsGsbZVHDgV5XLd8"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"error":"Invalid genre"}
+```
+
+### 7. Missing book (404)
+```text
+HTTP/1.1 404 Not Found
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 26
+ETag: W/"1a-9K7Ys+5Z9m3qczPTmMk82VGBL7g"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"error":"Book not found"}
+```
+
+### 8. Duplicate book (409)
+```text
+HTTP/1.1 409 Conflict
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 61
+ETag: W/"3d-GBnKybuWIP+OinY/nj2iyiSjGGI"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"error":"A book with this title and author already exists."}
+```
+
+### 9. PUT complete replacement (200)
+```text
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+ETag: W/"81-qtM9Mf+6vg+nhqwaeP/eMhbt7NQ"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"id":8,"title":"README Evidence 20261125010653","author":"Evidence Author","year":2023,"genre":"science","read":true,"rating":4}
+```
+
+### 10. PATCH selected fields (200)
+```text
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+ETag: W/"81-7jLyMRaSRAvbNi6MjCbtaz24USQ"
+Date: Tue, 24 Nov 2026 22:06:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"id":8,"title":"README Evidence 20261125010653","author":"Evidence Author","year":2023,"genre":"science","read":true,"rating":5}
+```
+
+### 11. Statistics after changes
+```text
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 111
+ETag: W/"6f-DmYuQSYZaeGgwnJB0JyhVFH+5AI"
+Date: Tue, 24 Nov 2026 22:06:54 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"total":8,"read":5,"unread":3,"averageRating":4.6,"byGenre":{"fiction":1,"science":4,"fantasy":2,"history":1}}
+```
+
+### 12. Delete book (204)
+```text
+HTTP/1.1 204 No Content
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Date: Tue, 24 Nov 2026 22:06:54 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+```
+
+### 13. Repeat delete (404)
+```text
+HTTP/1.1 404 Not Found
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:5173
+Vary: Origin
+Content-Type: application/json; charset=utf-8
+Content-Length: 26
+ETag: W/"1a-9K7Ys+5Z9m3qczPTmMk82VGBL7g"
+Date: Tue, 24 Nov 2026 22:06:54 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"error":"Book not found"}
+```
