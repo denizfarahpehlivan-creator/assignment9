@@ -1,0 +1,213 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #e2c297;
+  color: #29251f;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.eyebrow {
+  color: #98734f;
+  letter-spacing: 3px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.header h1 {
+  font-family: Georgia, serif;
+  font-size: 42px;
+  margin: 10px 0;
+}
+
+.header p:last-child {
+  color: #7f6d6d;
+}
+
+.panel,
+.book-card {
+  background: rgb(244, 169, 169);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 15px #0000000a;
+}
+
+.panel {
+  margin-bottom: 35px;
+}
+
+h2 {
+  font-family: Georgia, serif;
+}
+
+.book-form,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+input,
+select {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dac3a7;
+  border-radius: 8px;
+  font-size: 14px;
+  background: rgb(132, 63, 63);
+}
+
+.book-form input,
+.book-form select {
+  flex: 1;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  background: #76583c;
+  color: rgb(158, 108, 108);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-heading p {
+  color: #877d7d;
+  font-size: 14px;
+}
+
+.filters {
+  margin: 20px 0;
+}
+
+.filters input {
+  flex: 2;
+}
+
+.filters select {
+  flex: 1;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.book-card {
+  border: 1px solid #ead7c2;
+}
+
+.book-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.genre,
+.status {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #efdec5;
+}
+
+.read {
+  background: #d4f4dc;
+  color: #28733c;
+}
+
+.unread {
+  background: #e4d2b5;
+  color: #98651d;
+}
+
+.book-card h3 {
+  font-family: Georgia, serif;
+  font-size: 21px;
+  margin-bottom: 5px;
+}
+
+.author,
+.details {
+  color: #777;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.actions button {
+  flex: 1;
+  font-size: 12px;
+  padding: 10px 6px;
+}
+
+.secondary {
+  background: #e9e1d7;
+  color: #493a2b;
+}
+
+.delete {
+  background: #a94442;
+}
+
+.error {
+  color: #b42318;
+  background: #fee4e2;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.empty {
+  text-align: center;
+  padding: 30px;
+  color: #888;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 24px 14px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .book-form input,
+  .book-form select,
+  .book-form button,
+  .filters input,
+  .filters select {
+    width: 100%;
+    flex: auto;
+  }
+}
