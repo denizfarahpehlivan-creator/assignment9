@@ -1,135 +1,210 @@
 
 import { useEffect, useState } from "react";
+import {
+  getBooks,
+  getStats,
+  createBook,
+  updateBook,
+  patchBook,
+  deleteBook,
+} from "./api/books";
 import "./App.css";
 
-const API_URL = "http://localhost:3000/api";
+const emptyForm = {
+  title: "",
+  author: "",
+  year: "",
+  genre: "fiction",
+};
 
 function App() {
   const [books, setBooks] = useState([]);
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [year, setYear] = useState("");
-  const [genre, setGenre] = useState("fiction");
+  const [stats, setStats] = useState(null);
+
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
+
   const [search, setSearch] = useState("");
   const [filterGenre, setFilterGenre] = useState("");
   const [filterRead, setFilterRead] = useState("");
   const [sort, setSort] = useState("title");
+  const [sortDirection, setSortDirection] = useState("asc");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function loadBooks() {
-    setLoading(true);
-    setError("");
-
+  async function loadStats() {
     try {
-      const params = new URLSearchParams({ limit: "100" });
-
-      if (search.trim()) params.set("q", search.trim());
-      if (filterGenre) params.set("genre", filterGenre);
-      if (filterRead) params.set("read", filterRead);
-      if (sort) params.set("sort", sort);
-
-      const response = await fetch(`${API_URL}/books?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || "Books could not be loaded.");
-
-      setBooks(data.books || []);
+      const data = await getStats();
+      setStats(data);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadBooks() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const params = new URLSearchParams({ limit: "100" });
+
+        if (search.trim()) params.set("q", search.trim());
+        if (filterGenre) params.set("genre", filterGenre);
+        if (filterRead) params.set("read", filterRead);
+        if (sort) params.set("sort", sort);
+
+        const data = await getBooks(params, controller.signal);
+        setBooks(data.books || []);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setError(err.message);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
     loadBooks();
+
+    return () => controller.abort();
   }, [search, filterGenre, filterRead, sort]);
 
-  async function addBook(e) {
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  function handleFormChange(e) {
+    const { name, value } = e.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
+    const bookData = {
+      title: form.title.trim(),
+      author: form.author.trim(),
+      year: Number(form.year),
+      genre: form.genre,
+    };
+
     try {
-      const response = await fetch(`${API_URL}/books`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          author,
-          year: Number(year),
-          genre,
+      if (editingId !== null) {
+        const currentBook = books.find((book) => book.id === editingId);
+
+        await updateBook(editingId, {
+          ...bookData,
+          read: currentBook?.read ?? false,
+          rating: currentBook?.rating ?? null,
+        });
+      } else {
+        await createBook({
+          ...bookData,
           read: false,
           rating: null,
-        }),
-      });
+        });
+      }
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not add book.");
+      setForm(emptyForm);
+      setEditingId(null);
 
-      setTitle("");
-      setAuthor("");
-      setYear("");
-      setGenre("fiction");
-      loadBooks();
+      await refreshData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function startEditing(book) {
+    setEditingId(book.id);
+    setForm({
+      title: book.title,
+      author: book.author,
+      year: String(book.year),
+      genre: book.genre,
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setForm(emptyForm);
+  }
+
+  async function refreshData() {
+    const params = new URLSearchParams({ limit: "100" });
+
+    if (search.trim()) params.set("q", search.trim());
+    if (filterGenre) params.set("genre", filterGenre);
+    if (filterRead) params.set("read", filterRead);
+    if (sort) params.set("sort", sort);
+
+    try {
+      const data = await getBooks(params);
+      setBooks(data.books || []);
+      await loadStats();
     } catch (err) {
       setError(err.message);
     }
   }
 
   async function toggleRead(book) {
+    setError("");
+
     try {
-      const response = await fetch(`${API_URL}/books/${book.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ read: !book.read }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Update failed.");
-
-      loadBooks();
+      await patchBook(book.id, { read: !book.read });
+      await refreshData();
     } catch (err) {
       setError(err.message);
     }
   }
 
   async function rateBook(book, rating) {
+    if (!rating) return;
+
+    setError("");
+
     try {
-      const response = await fetch(`${API_URL}/books/${book.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: Number(rating) }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Rating failed.");
-
-      loadBooks();
+      await patchBook(book.id, { rating: Number(rating) });
+      await refreshData();
     } catch (err) {
       setError(err.message);
     }
   }
 
+  async function handleDelete(id) {
+    if (!window.confirm("Are you sure you want to delete this book?")) {
+      return;
+    }
 
-  async function deleteBook(id) {
-    if (!window.confirm("Are you sure you want to delete this book?")) return;
+    setError("");
 
     try {
-      const response = await fetch(`${API_URL}/books/${id}`, {
-        method: "DELETE",
-      });
+      await deleteBook(id);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Delete failed.");
+      if (editingId === id) {
+        cancelEditing();
       }
 
-      loadBooks();
+      await refreshData();
     } catch (err) {
       setError(err.message);
     }
   }
+
+  const displayedBooks =
+    sortDirection === "desc" ? [...books].reverse() : books;
 
   return (
     <main className="container">
@@ -139,31 +214,110 @@ function App() {
         <p>Keep track of the books you love.</p>
       </header>
 
+      {stats && (
+        <section className="panel">
+          <h2>Reading Statistics</h2>
+
+          <div className="stats-grid">
+            <div className="stat-card">
+              <h3>Total Books</h3>
+              <p>{stats.total ?? 0}</p>
+            </div>
+
+            <div className="stat-card">
+              <h3>Read</h3>
+              <p>{stats.read ?? 0}</p>
+            </div>
+
+            <div className="stat-card">
+              <h3>Unread</h3>
+              <p>{stats.unread ?? 0}</p>
+            </div>
+
+            <div className="stat-card">
+              <h3>Average Rating</h3>
+              <p>
+                {stats.averageRating == null
+                  ? "N/A"
+                  : Number(stats.averageRating).toFixed(1)}
+              </p>
+            </div>
+            <div className="stats-grid">
+                <div className="stat-card">
+                  <h3>Total Books</h3>
+                  <p>{stats.total ?? 0}</p>
+                </div>
+
+                <div className="stat-card">
+                  <h3>Read</h3>
+                  <p>{stats.read ?? 0}</p>
+                </div>
+
+                <div className="stat-card">
+                  <h3>Unread</h3>
+                  <p>{stats.unread ?? 0}</p>
+                </div>
+
+                <div className="stat-card">
+                  <h3>Average Rating</h3>
+                  <p>
+                    {stats.averageRating == null
+                      ? "N/A"
+                      : Number(stats.averageRating).toFixed(1)}
+                  </p>
+                </div>
+
+                {/* BURAYA EKLİYORUZ */}
+                <div className="stat-card">
+                  <h3>Books by Genre</h3>
+                  {Object.entries(stats.byGenre || {}).map(([genre, count]) => (
+                    <p key={genre}>
+                      {genre}: {count}
+                    </p>
+                  ))}
+                </div>
+
+              </div>
+          </div>
+        </section>
+      )}
+
       <section className="panel">
-        <h2>Add a New Book</h2>
-        <form className="book-form" onSubmit={addBook}>
+        <h2>{editingId !== null ? "Edit Book" : "Add a New Book"}</h2>
+
+        <form className="book-form" onSubmit={handleSubmit}>
           <input
+            name="title"
             placeholder="Book title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={form.title}
+            onChange={handleFormChange}
             required
           />
+
           <input
+            name="author"
             placeholder="Author"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
+            value={form.author}
+            onChange={handleFormChange}
             required
           />
+
           <input
+            name="year"
             type="number"
             placeholder="Publication year"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
+            value={form.year}
+            onChange={handleFormChange}
             min="1"
             max="9999"
             required
           />
-          <select value={genre} onChange={(e) => setGenre(e.target.value)}>
+
+          <select
+            name="genre"
+            value={form.genre}
+            onChange={handleFormChange}
+          >
             <option value="fiction">Fiction</option>
             <option value="non-fiction">Non-fiction</option>
             <option value="science">Science</option>
@@ -171,7 +325,20 @@ function App() {
             <option value="fantasy">Fantasy</option>
             <option value="other">Other</option>
           </select>
-          <button type="submit">Add Book</button>
+
+          <button type="submit">
+            {editingId !== null ? "Save Changes" : "Add Book"}
+          </button>
+
+          {editingId !== null && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={cancelEditing}
+            >
+              Cancel
+            </button>
+          )}
         </form>
       </section>
 
@@ -190,7 +357,10 @@ function App() {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <select value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)}>
+          <select
+            value={filterGenre}
+            onChange={(e) => setFilterGenre(e.target.value)}
+          >
             <option value="">All genres</option>
             <option value="fiction">Fiction</option>
             <option value="non-fiction">Non-fiction</option>
@@ -200,31 +370,46 @@ function App() {
             <option value="other">Other</option>
           </select>
 
-          <select value={filterRead} onChange={(e) => setFilterRead(e.target.value)}>
+          <select
+            value={filterRead}
+            onChange={(e) => setFilterRead(e.target.value)}
+          >
             <option value="">All statuses</option>
             <option value="true">Read</option>
             <option value="false">Unread</option>
           </select>
 
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          >
             <option value="title">Sort by title</option>
             <option value="year">Sort by year</option>
             <option value="rating">Sort by rating</option>
+          </select>
+
+          <select
+            value={sortDirection}
+            onChange={(e) => setSortDirection(e.target.value)}
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
           </select>
         </div>
 
         {error && <p className="error">{error}</p>}
         {loading && <p>Loading books...</p>}
 
-        {!loading && books.length === 0 && (
+        {!loading && displayedBooks.length === 0 && (
           <p className="empty">No books found. Add your first book!</p>
         )}
 
         <div className="book-grid">
-          {books.map((book) => (
+          {displayedBooks.map((book) => (
             <article className="book-card" key={book.id}>
               <div className="book-top">
                 <span className="genre">{book.genre}</span>
+
                 <span className={book.read ? "status read" : "status unread"}>
                   {book.read ? "Read" : "Unread"}
                 </span>
@@ -238,10 +423,13 @@ function App() {
               </p>
 
               <select
+                aria-label={`Rate ${book.title}`}
                 value={book.rating ?? ""}
                 onChange={(e) => rateBook(book, e.target.value)}
               >
-                <option value="" disabled>Give a rating</option>
+                <option value="" disabled>
+                  Give a rating
+                </option>
                 <option value="1">1 Star</option>
                 <option value="2">2 Stars</option>
                 <option value="3">3 Stars</option>
@@ -249,13 +437,25 @@ function App() {
                 <option value="5">5 Stars</option>
               </select>
 
-              
-
               <div className="actions">
-                <button className="secondary" onClick={() => toggleRead(book)}>
+                <button
+                  className="secondary"
+                  onClick={() => toggleRead(book)}
+                >
                   Mark as {book.read ? "Unread" : "Read"}
                 </button>
-                <button className="delete" onClick={() => deleteBook(book.id)}>
+
+                <button
+                  className="secondary"
+                  onClick={() => startEditing(book)}
+                >
+                  Edit
+                </button>
+
+                <button
+                  className="delete"
+                  onClick={() => handleDelete(book.id)}
+                >
                   Delete
                 </button>
               </div>
@@ -268,4 +468,3 @@ function App() {
 }
 
 export default App;
-

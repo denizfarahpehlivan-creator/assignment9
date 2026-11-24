@@ -211,3 +211,26 @@ button:hover {
     flex: auto;
   }
 }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  background: #efdec5;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.stat-card h3 {
+  font-size: 14px;
+  color: #76583c;
+  margin-top: 0;
+}
+
+.stat-card p {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 0;
+}
