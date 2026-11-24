@@ -352,3 +352,56 @@ npm run build
 ```
 
 The Vite build completed successfully.
+
+## Challenges Faced
+
+During development, several challenges were encountered:
+
+- Handling JSON request bodies correctly in PowerShell while testing the API with curl.exe.
+- Implementing server-side validation for invalid and repeated query parameters.
+- Handling duplicate books and returning appropriate HTTP status codes.
+- Configuring CORS so that the React frontend can communicate with the Express backend.
+- Understanding the difference between PUT and PATCH when updating book information.
+- Working with in-memory storage and understanding why data resets after restarting the server.
+
+These challenges helped improve understanding of REST API design, HTTP status codes, middleware, validation, and frontend-backend communication.
+## Verified HTTP Test Results
+
+All tests below were performed using curl.exe.
+
+| Test | Expected Status | Actual Result |
+|---|---:|---|
+| GET books with filters | 200 | Passed |
+| GET book by ID | 200 | Passed |
+| POST new book | 201 | Passed |
+| POST duplicate book | 409 | Passed |
+| POST invalid body | 400 | Passed |
+| Repeated genre query | 400 | Passed |
+| GET missing book | 404 | Passed |
+| PUT book | 200 | Passed |
+| PATCH book | 200 | Passed |
+| DELETE book | 204 | Passed |
+| DELETE same book again | 404 | Passed |
+| GET statistics before and after creation | 200 | Passed |
+
+### POST Creation Response
+
+HTTP/1.1 201 Created
+Location: /api/books/8
+
+### Duplicate POST Response
+
+{"error":"A book with this title and author already exists."}
+
+### Repeated Query Response
+
+{"error":"Invalid genre"}
+
+### Statistics Before Creation
+
+{"total":7,"read":4,"unread":3,"averageRating":4.5}
+
+### Statistics After Creation
+
+{"total":8,"read":5,"unread":3,"averageRating":4.6}
+
