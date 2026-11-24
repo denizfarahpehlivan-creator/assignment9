@@ -33,11 +33,13 @@ app.get("/api/hello", (req, res) => {
 });
 
 // GET /api/books
-// Supports genre, read status and search filtering
+// Supports genre, read, search and pagination
 app.get("/api/books", async (req, res) => {
   const genre = req.query.genre;
   const read = req.query.read;
   const q = req.query.q;
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 10);
 
   const validGenres = [
     "fiction",
@@ -76,6 +78,19 @@ app.get("/api/books", async (req, res) => {
     });
   }
 
+  // Validate pagination parameters
+  if (!Number.isInteger(page) || page < 1) {
+    return res.status(400).json({
+      error: "Page must be a positive integer"
+    });
+  }
+
+  if (!Number.isInteger(limit) || limit < 1) {
+    return res.status(400).json({
+      error: "Limit must be a positive integer"
+    });
+  }
+
   let books = await getAllBooks();
 
   // Filter by genre
@@ -102,7 +117,19 @@ app.get("/api/books", async (req, res) => {
     });
   }
 
-  return res.status(200).json(books);
+  // Pagination
+  const totalBooks = books.length;
+  const totalPages = Math.ceil(totalBooks / limit);
+  const startIndex = (page - 1) * limit;
+  const paginatedBooks = books.slice(startIndex, startIndex + limit);
+
+  return res.status(200).json({
+    page,
+    limit,
+    totalBooks,
+    totalPages,
+    books: paginatedBooks
+  });
 });
 
 // GET /api/books/:id
