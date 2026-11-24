@@ -294,11 +294,11 @@ The ID identifies one specific book, so it belongs in the route path. Genre and 
 
 ### 2. What happens if express.json() is moved below the routes?
 
-The JSON parsing middleware would not run before those routes. As a result, `req.body` would not contain the parsed JSON data when the POST or PUT handler executes. This can cause validation to fail and requests to return an error.
+I moved express.json() below the routes and tested a POST request. The request returned 400 Bad Request with the error "Book data must be an object". This happened because req.body was not parsed before the route handler tried to validate it.
 
 ### 3. Why is return important before an early error response?
 
-The return statement stops the handler after sending the response. Without it, execution may continue and attempt to send another response. This can cause an "Cannot set headers after they are sent" error.
+I removed return before the 404 response and tested an unknown route. The response was still 404 Not Found with the same JSON error. In this implementation, removing return did not change the result because no further normal middleware is called after the response.
 
 ### 4. What is the difference between PUT and PATCH?
 
@@ -306,7 +306,7 @@ PUT replaces the complete resource using the submitted data. PATCH changes only 
 
 ### 5. What happens if CLIENT_ORIGIN is incorrect?
 
-The browser rejects access to the response because the CORS origin does not match the configured allowed origin. The browser console reports a CORS error. A command-line request using curl can still receive an HTTP response because curl does not enforce browser CORS restrictions.
+I started the server with CLIENT_ORIGIN set to http://localhost:9999 while the frontend was running at http://localhost:5173. The browser console reported a CORS error because the allowed origin did not match. The server still returned 200 OK, and curl also received 200 OK because curl does not enforce browser CORS restrictions. No server-side error was needed for this browser restriction to occur.
 
 ### 6. Why does the server validate data if the client already validates it?
 
