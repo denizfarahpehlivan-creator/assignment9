@@ -263,7 +263,7 @@ app.get("/api/books/:id", async (req, res) => {
 app.post("/api/books", async (req, res) => {
   const result = validateBook(req.body);
 
-  if (!result.valid) {
+  if (result.error) {
     return res.status(400).json({
       error: result.error
     });
@@ -286,7 +286,7 @@ app.put("/api/books/:id", async (req, res) => {
 
   const result = validateBook(req.body);
 
-  if (!result.valid) {
+  if (result.error) {
     return res.status(400).json({
       error: result.error
     });
