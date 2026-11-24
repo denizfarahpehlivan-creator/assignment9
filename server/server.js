@@ -38,6 +38,7 @@ app.get("/api/books", async (req, res) => {
   const genre = req.query.genre;
   const read = req.query.read;
   const q = req.query.q;
+  const year = req.query.year;
   const page = Number(req.query.page ?? 1);
   const limit = Number(req.query.limit ?? 10);
   const sort = req.query.sort;
@@ -77,6 +78,16 @@ app.get("/api/books", async (req, res) => {
   if (q !== undefined && typeof q !== "string") {
     return res.status(400).json({
       error: "Invalid search query"
+    });
+  }
+
+  // Validate year parameter
+  if (
+    year !== undefined &&
+    (!/^\d{4}$/.test(year) || !Number.isInteger(Number(year)) || Number(year) <= 0)
+  ) {
+    return res.status(400).json({
+      error: "Invalid year. Use a valid four-digit year."
     });
   }
 
@@ -140,6 +151,11 @@ app.get("/api/books", async (req, res) => {
     });
   }
 
+  // Filter by publication year
+  if (year !== undefined) {
+    books = books.filter((book) => book.year === Number(year));
+  }
+
   // Sorting
   if (sort !== undefined) {
     books.sort((a, b) => {
@@ -154,9 +170,9 @@ app.get("/api/books", async (req, res) => {
         if (a.rating === null && b.rating === null) {
           comparison = 0;
         } else if (a.rating === null) {
-          comparison = 1;
+          return 1;
         } else if (b.rating === null) {
-          comparison = -1;
+          return -1;
         } else {
           comparison = a.rating - b.rating;
         }
