@@ -33,13 +33,15 @@ app.get("/api/hello", (req, res) => {
 });
 
 // GET /api/books
-// Supports genre, read, search and pagination
+// Supports filtering, search, sorting and pagination
 app.get("/api/books", async (req, res) => {
   const genre = req.query.genre;
   const read = req.query.read;
   const q = req.query.q;
   const page = Number(req.query.page ?? 1);
   const limit = Number(req.query.limit ?? 10);
+  const sort = req.query.sort;
+  const order = req.query.order ?? "asc";
 
   const validGenres = [
     "fiction",
@@ -91,6 +93,27 @@ app.get("/api/books", async (req, res) => {
     });
   }
 
+  // Validate sorting parameters
+  const validSortFields = ["title", "year", "rating"];
+
+  if (
+    sort !== undefined &&
+    (typeof sort !== "string" || !validSortFields.includes(sort))
+  ) {
+    return res.status(400).json({
+      error: "Invalid sort field. Use title, year or rating."
+    });
+  }
+
+  if (
+    typeof order !== "string" ||
+    !["asc", "desc"].includes(order)
+  ) {
+    return res.status(400).json({
+      error: "Invalid order. Use asc or desc."
+    });
+  }
+
   let books = await getAllBooks();
 
   // Filter by genre
@@ -114,6 +137,32 @@ app.get("/api/books", async (req, res) => {
         book.title.toLowerCase().includes(searchTerm) ||
         book.author.toLowerCase().includes(searchTerm)
       );
+    });
+  }
+
+  // Sorting
+  if (sort !== undefined) {
+    books.sort((a, b) => {
+      let comparison;
+
+      if (sort === "title") {
+        comparison = a.title.localeCompare(b.title);
+      } else if (sort === "year") {
+        comparison = a.year - b.year;
+      } else {
+        // Put books without ratings at the end
+        if (a.rating === null && b.rating === null) {
+          comparison = 0;
+        } else if (a.rating === null) {
+          comparison = 1;
+        } else if (b.rating === null) {
+          comparison = -1;
+        } else {
+          comparison = a.rating - b.rating;
+        }
+      }
+
+      return order === "desc" ? -comparison : comparison;
     });
   }
 
