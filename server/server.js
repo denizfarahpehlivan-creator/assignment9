@@ -1,4 +1,4 @@
-import { validateBook } from "./validate.js";
+﻿import { validateBook } from "./validate.js";
 
 import {
   addBook,
@@ -53,7 +53,7 @@ app.get("/api/books", asyncHandler(async (req, res) => {
   } = req.query;
 
   const page = Number(req.query.page ?? 1);
-  const limit = Number(req.query.limit ?? 10);
+  const limit = Number(req.query.limit ?? 50);
 
   const validGenres = [
     "fiction",
@@ -128,7 +128,7 @@ app.get("/api/books", asyncHandler(async (req, res) => {
     });
   }
 
-  const validSortFields = ["title", "year", "rating"];
+  const validSortFields = ["title", "author", "year", "rating"];
 
   if (
     sort !== undefined &&
@@ -185,6 +185,8 @@ app.get("/api/books", asyncHandler(async (req, res) => {
 
       if (sort === "title") {
         comparison = a.title.localeCompare(b.title);
+      } else if (sort === "author") {
+        comparison = a.author.localeCompare(b.author);
       } else if (sort === "year") {
         comparison = a.year - b.year;
       } else {
@@ -406,3 +408,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+

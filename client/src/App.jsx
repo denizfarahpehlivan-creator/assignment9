@@ -1,4 +1,4 @@
-
+﻿
 import { useEffect, useState } from "react";
 import {
   getBooks,
@@ -56,6 +56,7 @@ function App() {
         if (filterGenre) params.set("genre", filterGenre);
         if (filterRead) params.set("read", filterRead);
         if (sort) params.set("sort", sort);
+    params.set("order", sortDirection);
 
         const data = await getBooks(params, controller.signal);
         setBooks(data.books || []);
@@ -73,7 +74,7 @@ function App() {
     loadBooks();
 
     return () => controller.abort();
-  }, [search, filterGenre, filterRead, sort]);
+  }, [search, filterGenre, filterRead, sort, sortDirection]);
 
   useEffect(() => {
     loadStats();
@@ -149,6 +150,7 @@ function App() {
     if (filterGenre) params.set("genre", filterGenre);
     if (filterRead) params.set("read", filterRead);
     if (sort) params.set("sort", sort);
+    params.set("order", sortDirection);
 
     try {
       const data = await getBooks(params);
@@ -204,7 +206,7 @@ function App() {
   }
 
   const displayedBooks =
-    sortDirection === "desc" ? [...books].reverse() : books;
+    books;
 
   return (
     <main className="container">
@@ -267,7 +269,7 @@ function App() {
                   </p>
                 </div>
 
-                {/* BURAYA EKLİYORUZ */}
+                {/* BURAYA EKLÄ°YORUZ */}
                 <div className="stat-card">
                   <h3>Books by Genre</h3>
                   {Object.entries(stats.byGenre || {}).map(([genre, count]) => (
@@ -384,6 +386,7 @@ function App() {
             onChange={(e) => setSort(e.target.value)}
           >
             <option value="title">Sort by title</option>
+            <option value="author">Sort by author</option>
             <option value="year">Sort by year</option>
             <option value="rating">Sort by rating</option>
           </select>
@@ -468,3 +471,4 @@ function App() {
 }
 
 export default App;
+
