@@ -39,6 +39,8 @@ app.get("/api/books", async (req, res) => {
   const read = req.query.read;
   const q = req.query.q;
   const year = req.query.year;
+  const minYear = req.query.minYear;
+  const maxYear = req.query.maxYear;
   const page = Number(req.query.page ?? 1);
   const limit = Number(req.query.limit ?? 10);
   const sort = req.query.sort;
@@ -90,6 +92,36 @@ app.get("/api/books", async (req, res) => {
       error: "Invalid year. Use a valid four-digit year."
     });
   }
+  // Validate minimum year
+if (
+  minYear !== undefined &&
+  (!/^\d{4}$/.test(minYear) || Number(minYear) <= 0)
+) {
+  return res.status(400).json({
+    error: "Invalid minYear. Use a valid four-digit year."
+  });
+}
+
+// Validate maximum year
+if (
+  maxYear !== undefined &&
+  (!/^\d{4}$/.test(maxYear) || Number(maxYear) <= 0)
+) {
+  return res.status(400).json({
+    error: "Invalid maxYear. Use a valid four-digit year."
+  });
+}
+
+// Validate year range
+if (
+  minYear !== undefined &&
+  maxYear !== undefined &&
+  Number(minYear) > Number(maxYear)
+) {
+  return res.status(400).json({
+    error: "minYear cannot be greater than maxYear."
+  });
+}
 
   // Validate pagination parameters
   if (!Number.isInteger(page) || page < 1) {
@@ -155,6 +187,15 @@ app.get("/api/books", async (req, res) => {
   if (year !== undefined) {
     books = books.filter((book) => book.year === Number(year));
   }
+  // Filter by minimum year
+if (minYear !== undefined) {
+  books = books.filter((book) => book.year >= Number(minYear));
+}
+
+// Filter by maximum year
+if (maxYear !== undefined) {
+  books = books.filter((book) => book.year <= Number(maxYear));
+}
 
   // Sorting
   if (sort !== undefined) {
